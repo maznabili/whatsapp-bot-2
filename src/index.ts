@@ -1,43 +1,22 @@
-import { client } from "./server";
-
+import { client } from './server';
 import {
-  PassagemController,
-  EconomiaController,
-  CompanyController,
-  GlobalController,
-  PausaController,
-  EncerraController,
-  ZabbixController,
-} from "./app/controllers";
+  EconomyCommand,
+  QuoteCommand,
+  CepCommand,
+  ProfileCommand,
+} from './app/commands';
+import CommandDispatcher from './app/utils/CommandDispatcher';
+import type { Message } from 'whatsapp-web.js';
 
-client.on("message", async (message: any) => {
-  switch (message.body) {
-    case "!turno":
-      await PassagemController(message);
-      break;
+const dispatcher = new CommandDispatcher();
 
-    case "!company":
-      await CompanyController(message);
-      break;
+client.on('message', async (message: Message) => {
+  dispatcher.register('cotacao', new EconomyCommand());
+  dispatcher.register('mencionar', new QuoteCommand());
+  dispatcher.register('cep', new CepCommand(message.body));
+  dispatcher.register('perfil', new ProfileCommand(message.body));
 
-    case "!cotacao":
-      await EconomiaController(message);
-      break;
-
-    case "!important":
-      await GlobalController(message);
-      break;
-
-    case "!pausa":
-      await PausaController(message);
-      break;
-
-    case "!encerrar":
-      await EncerraController(message);
-      break;
-      
-    case "!zabbix":
-      await ZabbixController(message);
-      break;
+  if (message.body.startsWith('!')) {
+    dispatcher.dispatch(message.body.slice(1), message);
   }
 });
